@@ -85,12 +85,12 @@
             // creditsAndStuff
             // 
             this.creditsAndStuff.AutoSize = true;
-            this.creditsAndStuff.Location = new System.Drawing.Point(505, 9);
+            this.creditsAndStuff.Location = new System.Drawing.Point(488, 9);
             this.creditsAndStuff.Name = "creditsAndStuff";
-            this.creditsAndStuff.Size = new System.Drawing.Size(89, 13);
+            this.creditsAndStuff.Size = new System.Drawing.Size(110, 13);
             this.creditsAndStuff.TabIndex = 11;
             this.creditsAndStuff.TabStop = true;
-            this.creditsAndStuff.Text = "With <3 by Henry";
+            this.creditsAndStuff.Text = "With <3 by darxmorph";
             this.creditsAndStuff.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.creditsAndStuff_LinkClicked);
             // 
             // videoCountLabel

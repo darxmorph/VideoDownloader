@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.WindowsAPICodePack;
 using Microsoft.WindowsAPICodePack.Taskbar;
+using System.Threading;
 using hdsdump;
 
 namespace Formula1Downloader
@@ -38,10 +39,10 @@ namespace Formula1Downloader
 
                 switch (videoType) {
                     case F1VideoTypes.SingleVideo:
-                        KeyValuePair<string, string> video = getF4MManifestURLsFromVideoURI(videoURI).First();
+                        Video video = getVideosFromVideoURI(videoURI).First();
                         SaveFileDialog whereToSave = new SaveFileDialog();
                         whereToSave.Filter = "FLV video (*.flv)|*.flv|All files (*.*)|*.*";
-                        whereToSave.FileName = CleanFileName(video.Key);
+                        whereToSave.FileName = CleanFileName(video.Title);
                         if (whereToSave.ShowDialog() == DialogResult.OK)
                         {
                             // downloadProgressBar.Style = ProgressBarStyle.Marquee;
@@ -49,7 +50,7 @@ namespace Formula1Downloader
 
                             BackgroundWorker downloadWorker = new BackgroundWorker();
                             downloadWorker.DoWork += delegate {
-                                getVideoUsingAdobeHDS(video.Value, whereToSave.FileName);
+                                getVideoUsingAdobeHDS(video, whereToSave.FileName);
                             };
 
                             downloadWorker.RunWorkerCompleted += delegate {
@@ -69,10 +70,10 @@ namespace Formula1Downloader
                         break;
 
                     case F1VideoTypes.H5AndVideo:
-                        Dictionary<string, string> videosToDownload = null;
+                        List<Video> videosToDownload = null;
                         BackgroundWorker getManifests = new BackgroundWorker();
                         getManifests.DoWork += delegate {
-                            videosToDownload = getF4MManifestURLsFromVideoURI(videoURI);
+                            videosToDownload = getVideosFromVideoURI(videoURI);
                         };
                         getManifests.RunWorkerCompleted += delegate {
                             if (videosToDownload.Count < 1) {
@@ -89,15 +90,15 @@ namespace Formula1Downloader
 
                                 BackgroundWorker downloadWorker = new BackgroundWorker();
                                 downloadWorker.DoWork += delegate {
-                                    foreach (KeyValuePair<string, string> vid in videosToDownload)
+                                    foreach (Video vid in videosToDownload)
                                     {
                                         nowDownloadingVideo++;
                                         videoCountLabel.Invoke(new Action(() => {
                                             videoCountLabel.Visible = true;
                                             videoCountLabel.Text = "Now downloading video " + nowDownloadingVideo + " out of " + videosToDownload.Count;
                                         }));
-                                        string saveFilePath = Path.Combine(saveToDirectory.SelectedPath, CleanFileName(vid.Key)) + ".flv";
-                                        getVideoUsingAdobeHDS(vid.Value, saveFilePath);
+                                        string saveFilePath = Path.Combine(saveToDirectory.SelectedPath, CleanFileName(vid.Title)) + ".flv";
+                                        getVideoUsingAdobeHDS(vid, saveFilePath);
                                     }
                                 };
                                 downloadWorker.RunWorkerCompleted += delegate {
@@ -133,7 +134,9 @@ namespace Formula1Downloader
                 urlTextBox.Enabled = true;
             }
         }
-        private Dictionary<string, string> getF4MManifestURLsFromVideoURI(Uri videoURI) {
+        private List<Video> getVideosFromVideoURI(Uri videoURI) {
+            List<Video> vids = new List<Video>();
+
             HtmlWeb web = new HtmlWeb();
             HtmlAgilityPack.HtmlDocument htmlDoc = web.Load(videoURI.AbsoluteUri);
 
@@ -145,13 +148,20 @@ namespace Formula1Downloader
             {
                 if (mdNodeCol.Count > 1)
                 {
-                    Dictionary<string, string> availableVideos = new Dictionary<string, string>();
+                    List<Video> availableVideos = new List<Video>();
 
                     foreach (HtmlNode mdnode in mdNodeCol)
                     {
                         HtmlAttribute desc = mdnode.Attributes["data-videoid"];
                         
                         HtmlNodeCollection titleNodes = mdnode.ParentNode.PreviousSibling.PreviousSibling.SelectNodes("h5");
+
+                        // Some vids use h4
+
+                        if (titleNodes == null)
+                        {
+                            titleNodes = mdnode.ParentNode.PreviousSibling.PreviousSibling.SelectNodes("h4");
+                        }
 
                         string videoId = desc.Value;
                         string videoTitle = "";
@@ -165,11 +175,18 @@ namespace Formula1Downloader
                             }
                         }
 
-                        availableVideos.Add(videoTitle, videoId);
+                        availableVideos.Add(new Video(videoTitle, videoId, getF4MManifestURLForVideoId(videoId)));
                     }
 
-                    ChooseVideos cv = new ChooseVideos(availableVideos.Keys.ToArray());
-                    System.Threading.AutoResetEvent autoEvent = new System.Threading.AutoResetEvent(false);
+                    List<string> vidTitles = new List<string>();
+
+                    foreach (Video v in availableVideos)
+                    {
+                        vidTitles.Add(v.Title);
+                    }
+
+                    ChooseVideos cv = new ChooseVideos(vidTitles.ToArray());
+                    AutoResetEvent autoEvent = new AutoResetEvent(false);
 
                     this.Invoke((MethodInvoker)delegate ()
                     {
@@ -179,11 +196,12 @@ namespace Formula1Downloader
                              string[] selectedVideos = cv.CheckedItems.Cast<string>().ToArray();
                              foreach (string s in selectedVideos)
                              {
-                                 foreach (KeyValuePair<string, string> k in availableVideos)
+                                 foreach (Video v in availableVideos)
                                  {
-                                     if (k.Key == s)
+                                     if (v.Title == s)
                                      {
-                                         manifests.Add(k.Key, getF4MManifestURLForVideoId(k.Value));
+                                         // manifests.Add(k.Key, getF4MManifestURLForVideoId(k.Value));
+                                         vids.Add(v);
                                      }
                                  }
                              }
@@ -199,7 +217,7 @@ namespace Formula1Downloader
                     HtmlNode titlenode = htmlDoc.DocumentNode.SelectSingleNode("//h1");
                     string videoTitle = titlenode.InnerText;
 
-                    manifests.Add(videoTitle, getF4MManifestURLForVideoId(videoId));
+                    vids.Add(new Video(videoTitle, videoId, getF4MManifestURLForVideoId(videoId)));
                 }
             }
             else {
@@ -207,7 +225,7 @@ namespace Formula1Downloader
                 return null;
             }
 
-            return manifests;
+            return vids;
         }
 
         private static string getF4MManifestURLForVideoId(string videoId) {
@@ -240,12 +258,12 @@ namespace Formula1Downloader
             H5AndVideo,
         }
 
-        private void getVideoUsingAdobeHDS(string F4MManifestURL, string outFile)
+        private void getVideoUsingAdobeHDS(Video video, string outFile)
         {
             F4F f4f = new F4F();
             f4f.quality = "3600";
             f4f.outPath = outFile;
-            f4f.DownloadFragments(F4MManifestURL, this.downloadProgressBar);
+            f4f.DownloadFragments(video.ManifestUrl, this.downloadProgressBar);
         }
 
         private void creditsAndStuff_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
