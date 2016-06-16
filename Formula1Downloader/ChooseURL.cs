@@ -27,9 +27,9 @@ namespace Formula1Downloader
             Uri videoURI = null;
 
             if (!(urlTextBox.Text.StartsWith("http://") || urlTextBox.Text.StartsWith("https://")))
-                urlTextBox.Text = "http://" + urlTextBox.Text;
+                urlTextBox.Text = "https://" + urlTextBox.Text;
 
-            bool isURLvalid = urlTextBox.Text.StartsWith("http://www.formula1.com") || urlTextBox.Text.StartsWith("https://www.formula1.com")
+            bool isURLvalid = (urlTextBox.Text.StartsWith("http://www.formula1.com") || urlTextBox.Text.StartsWith("https://www.formula1.com"))
                 && Uri.TryCreate(urlTextBox.Text, UriKind.Absolute, out videoURI)
                 && (videoURI.Scheme == Uri.UriSchemeHttp || videoURI.Scheme == Uri.UriSchemeHttps);
 
