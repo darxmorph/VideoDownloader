@@ -12,4 +12,4 @@ You can get the latest binary from [Releases](https://github.com/darxmorph/Formu
 
 * Click `Save`
 
-You might as well enter a "Features" URL, like `https://www.formula1.com/content/fom-website/en/latest/features/2016/3/f1-2016-best-onboard-videos-australia.html`, and a dialog to choose the videos to download will appear
+You can also enter a "Features" URL, like `https://www.formula1.com/content/fom-website/en/latest/features/2016/3/f1-2016-best-onboard-videos-australia.html`, and a dialog to choose the videos to download will appear

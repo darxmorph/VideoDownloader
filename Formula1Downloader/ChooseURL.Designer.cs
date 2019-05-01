@@ -33,17 +33,17 @@
             this.downloadProgressBar = new System.Windows.Forms.ProgressBar();
             this.someDetails = new System.Windows.Forms.Label();
             this.urlTextBox = new System.Windows.Forms.TextBox();
-            this.percentageLabel = new System.Windows.Forms.Label();
             this.creditsAndStuff = new System.Windows.Forms.LinkLabel();
-            this.videoCountLabel = new System.Windows.Forms.Label();
-            this.fragmentCountLabel = new System.Windows.Forms.Label();
+            this.videoTitleLabel = new System.Windows.Forms.Label();
+            this.preferMP4 = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // downloadButton
             // 
-            this.downloadButton.Location = new System.Drawing.Point(478, 91);
+            this.downloadButton.Location = new System.Drawing.Point(876, 168);
+            this.downloadButton.Margin = new System.Windows.Forms.Padding(6);
             this.downloadButton.Name = "downloadButton";
-            this.downloadButton.Size = new System.Drawing.Size(107, 34);
+            this.downloadButton.Size = new System.Drawing.Size(196, 63);
             this.downloadButton.TabIndex = 0;
             this.downloadButton.Text = "Download";
             this.downloadButton.UseVisualStyleBackColor = true;
@@ -51,83 +51,80 @@
             // 
             // downloadProgressBar
             // 
-            this.downloadProgressBar.Location = new System.Drawing.Point(0, 147);
+            this.downloadProgressBar.Location = new System.Drawing.Point(0, 271);
+            this.downloadProgressBar.Margin = new System.Windows.Forms.Padding(6);
             this.downloadProgressBar.Name = "downloadProgressBar";
-            this.downloadProgressBar.Size = new System.Drawing.Size(606, 35);
+            this.downloadProgressBar.Size = new System.Drawing.Size(1111, 65);
             this.downloadProgressBar.TabIndex = 1;
             // 
             // someDetails
             // 
             this.someDetails.AutoSize = true;
-            this.someDetails.Location = new System.Drawing.Point(12, 11);
+            this.someDetails.Location = new System.Drawing.Point(22, 20);
+            this.someDetails.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.someDetails.Name = "someDetails";
-            this.someDetails.Size = new System.Drawing.Size(87, 13);
+            this.someDetails.Size = new System.Drawing.Size(155, 25);
             this.someDetails.TabIndex = 5;
             this.someDetails.Text = "Insert video URL";
             // 
             // urlTextBox
             // 
-            this.urlTextBox.Location = new System.Drawing.Point(15, 50);
+            this.urlTextBox.Location = new System.Drawing.Point(28, 92);
+            this.urlTextBox.Margin = new System.Windows.Forms.Padding(6);
             this.urlTextBox.Name = "urlTextBox";
-            this.urlTextBox.Size = new System.Drawing.Size(583, 20);
+            this.urlTextBox.Size = new System.Drawing.Size(1066, 29);
             this.urlTextBox.TabIndex = 7;
-            // 
-            // percentageLabel
-            // 
-            this.percentageLabel.AutoSize = true;
-            this.percentageLabel.Location = new System.Drawing.Point(12, 131);
-            this.percentageLabel.Name = "percentageLabel";
-            this.percentageLabel.Size = new System.Drawing.Size(62, 13);
-            this.percentageLabel.TabIndex = 10;
-            this.percentageLabel.Text = "Percentage";
-            this.percentageLabel.Visible = false;
             // 
             // creditsAndStuff
             // 
             this.creditsAndStuff.AutoSize = true;
-            this.creditsAndStuff.Location = new System.Drawing.Point(488, 9);
+            this.creditsAndStuff.Location = new System.Drawing.Point(895, 17);
+            this.creditsAndStuff.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
             this.creditsAndStuff.Name = "creditsAndStuff";
-            this.creditsAndStuff.Size = new System.Drawing.Size(110, 13);
+            this.creditsAndStuff.Size = new System.Drawing.Size(204, 25);
             this.creditsAndStuff.TabIndex = 11;
             this.creditsAndStuff.TabStop = true;
             this.creditsAndStuff.Text = "With <3 by darxmorph";
             this.creditsAndStuff.LinkClicked += new System.Windows.Forms.LinkLabelLinkClickedEventHandler(this.creditsAndStuff_LinkClicked);
             // 
-            // videoCountLabel
+            // videoTitleLabel
             // 
-            this.videoCountLabel.AutoSize = true;
-            this.videoCountLabel.Location = new System.Drawing.Point(242, 102);
-            this.videoCountLabel.Name = "videoCountLabel";
-            this.videoCountLabel.Size = new System.Drawing.Size(61, 13);
-            this.videoCountLabel.TabIndex = 12;
-            this.videoCountLabel.Text = "videoCount";
-            this.videoCountLabel.Visible = false;
+            this.videoTitleLabel.AutoSize = true;
+            this.videoTitleLabel.Location = new System.Drawing.Point(22, 138);
+            this.videoTitleLabel.Margin = new System.Windows.Forms.Padding(6, 0, 6, 0);
+            this.videoTitleLabel.Name = "videoTitleLabel";
+            this.videoTitleLabel.Size = new System.Drawing.Size(96, 25);
+            this.videoTitleLabel.TabIndex = 12;
+            this.videoTitleLabel.Text = "videoTitle";
+            this.videoTitleLabel.Visible = false;
             // 
-            // fragmentCountLabel
+            // preferMP4
             // 
-            this.fragmentCountLabel.AutoSize = true;
-            this.fragmentCountLabel.Location = new System.Drawing.Point(12, 102);
-            this.fragmentCountLabel.Name = "fragmentCountLabel";
-            this.fragmentCountLabel.Size = new System.Drawing.Size(76, 13);
-            this.fragmentCountLabel.TabIndex = 13;
-            this.fragmentCountLabel.Text = "fragmentCount";
-            this.fragmentCountLabel.Visible = false;
+            this.preferMP4.AutoSize = true;
+            this.preferMP4.Checked = true;
+            this.preferMP4.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.preferMP4.Location = new System.Drawing.Point(27, 202);
+            this.preferMP4.Name = "preferMP4";
+            this.preferMP4.Size = new System.Drawing.Size(136, 29);
+            this.preferMP4.TabIndex = 13;
+            this.preferMP4.Text = "Prefer MP4";
+            this.preferMP4.UseVisualStyleBackColor = true;
             // 
             // ChooseURL
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 24F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(606, 182);
-            this.Controls.Add(this.fragmentCountLabel);
-            this.Controls.Add(this.videoCountLabel);
+            this.ClientSize = new System.Drawing.Size(1111, 336);
+            this.Controls.Add(this.preferMP4);
+            this.Controls.Add(this.videoTitleLabel);
             this.Controls.Add(this.creditsAndStuff);
-            this.Controls.Add(this.percentageLabel);
             this.Controls.Add(this.urlTextBox);
             this.Controls.Add(this.someDetails);
             this.Controls.Add(this.downloadProgressBar);
             this.Controls.Add(this.downloadButton);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.Margin = new System.Windows.Forms.Padding(6);
             this.MaximizeBox = false;
             this.Name = "ChooseURL";
             this.Text = "Formula1 Downloader";
@@ -142,10 +139,9 @@
         private System.Windows.Forms.ProgressBar downloadProgressBar;
         private System.Windows.Forms.Label someDetails;
         private System.Windows.Forms.TextBox urlTextBox;
-        private System.Windows.Forms.Label percentageLabel;
         private System.Windows.Forms.LinkLabel creditsAndStuff;
-        private System.Windows.Forms.Label videoCountLabel;
-        private System.Windows.Forms.Label fragmentCountLabel;
+        private System.Windows.Forms.Label videoTitleLabel;
+        private System.Windows.Forms.CheckBox preferMP4;
     }
 }
 

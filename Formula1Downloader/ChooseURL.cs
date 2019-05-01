@@ -1,28 +1,27 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Windows.Forms;
-using HtmlAgilityPack;
 using System.Diagnostics;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.WindowsAPICodePack;
+using HtmlAgilityPack;
 using Microsoft.WindowsAPICodePack.Taskbar;
-using System.Threading;
-using hdsdump;
+using Formula1Downloader.Downloaders;
 
 namespace Formula1Downloader
 {
     public partial class ChooseURL : Form
     {
+        private readonly Queue<Tuple<Video, string>> _downloadQueue = new Queue<Tuple<Video, string>>();
+
         public ChooseURL()
         {
             InitializeComponent();
         }
         private void downloadButton_Click(object sender, EventArgs e)
         {
-            downloadButton.Enabled = false;
-            urlTextBox.Enabled = false;
+            ToggleUI(false);
 
             Uri videoURI = null;
 
@@ -33,237 +32,142 @@ namespace Formula1Downloader
                 && Uri.TryCreate(urlTextBox.Text, UriKind.Absolute, out videoURI)
                 && (videoURI.Scheme == Uri.UriSchemeHttp || videoURI.Scheme == Uri.UriSchemeHttps);
 
-            if (isURLvalid)
+            if (!isURLvalid)
             {
-                F1VideoTypes? videoType = getF1UriVideoType(videoURI);
+                MessageBox.Show("That doesn't look like a valid URL", ActiveForm.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToggleUI(true);
+                return;
+            }
 
-                switch (videoType) {
-                    case F1VideoTypes.SingleVideo:
-                        Video video = getVideosFromVideoURI(videoURI).First();
-                        SaveFileDialog whereToSave = new SaveFileDialog();
-                        whereToSave.Filter = "FLV video (*.flv)|*.flv|All files (*.*)|*.*";
-                        whereToSave.FileName = CleanFileName(video.Title);
-                        if (whereToSave.ShowDialog() == DialogResult.OK)
-                        {
-                            // downloadProgressBar.Style = ProgressBarStyle.Marquee;
-                            // TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Indeterminate);
+            List<Video> videos = GetVideosFromUri(videoURI);
 
-                            BackgroundWorker downloadWorker = new BackgroundWorker();
-                            downloadWorker.DoWork += delegate {
-                                getVideoUsingAdobeHDS(video, whereToSave.FileName);
-                            };
+            if (videos.Count == 1)
+            {
+                var video = videos.First();
+                var whereToSave = new SaveFileDialog
+                {
+                    Filter = preferMP4.Checked ? "MP4 video (*.mp4)|*.mp4|All files (*.*)|*.*" : "FLV video (*.flv)|*.flv|All files (*.*)|*.*",
+                    FileName = CleanFileName(video.Title)
+                };
 
-                            downloadWorker.RunWorkerCompleted += delegate {
-                                downloadButton.Enabled = true;
-                                urlTextBox.Enabled = true;
-                                downloadProgressBar.Style = ProgressBarStyle.Continuous;
-                                downloadProgressBar.Value = 0;
-                                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
-                                MessageBox.Show("Done", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                            };
-                            downloadWorker.RunWorkerAsync();
-                        }
-                        else {
-                            downloadButton.Enabled = true;
-                            urlTextBox.Enabled = true;
-                        }
-                        break;
-
-                    case F1VideoTypes.H5AndVideo:
-                        List<Video> videosToDownload = null;
-                        BackgroundWorker getManifests = new BackgroundWorker();
-                        getManifests.DoWork += delegate {
-                            videosToDownload = getVideosFromVideoURI(videoURI);
-                        };
-                        getManifests.RunWorkerCompleted += delegate {
-                            if (videosToDownload.Count < 1) {
-                                downloadButton.Enabled = true;
-                                urlTextBox.Enabled = true;
-                                return;
-                            }
-                            FolderBrowserDialog saveToDirectory = new FolderBrowserDialog();
-                            if (saveToDirectory.ShowDialog() == DialogResult.OK)
-                            {
-                                int nowDownloadingVideo = 0;
-                                // downloadProgressBar.Style = ProgressBarStyle.Marquee;
-                                // TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.Indeterminate);
-
-                                BackgroundWorker downloadWorker = new BackgroundWorker();
-                                downloadWorker.DoWork += delegate {
-                                    foreach (Video vid in videosToDownload)
-                                    {
-                                        nowDownloadingVideo++;
-                                        videoCountLabel.Invoke(new Action(() => {
-                                            videoCountLabel.Visible = true;
-                                            videoCountLabel.Text = "Now downloading video " + nowDownloadingVideo + " out of " + videosToDownload.Count;
-                                        }));
-                                        string saveFilePath = Path.Combine(saveToDirectory.SelectedPath, CleanFileName(vid.Title)) + ".flv";
-                                        getVideoUsingAdobeHDS(vid, saveFilePath);
-                                    }
-                                };
-                                downloadWorker.RunWorkerCompleted += delegate {
-                                    downloadButton.Enabled = true;
-                                    urlTextBox.Enabled = true;
-                                    videoCountLabel.Visible = false;
-                                    downloadProgressBar.Style = ProgressBarStyle.Continuous;
-                                    downloadProgressBar.Value = 0;
-                                    TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
-                                    MessageBox.Show("Done", this.Text, MessageBoxButtons.OK, MessageBoxIcon.Information);
-                                };
-                                downloadWorker.RunWorkerAsync();
-                            }
-                            else {
-                                downloadButton.Enabled = true;
-                                urlTextBox.Enabled = true;
-                            }
-                        };
-                        getManifests.RunWorkerAsync();
-
-                        break;
-
-                    default:
-                        MessageBox.Show("Error obtaning video info from URL", ActiveForm.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        downloadButton.Enabled = true;
-                        urlTextBox.Enabled = true;
-                        break;
+                if (whereToSave.ShowDialog() == DialogResult.OK)
+                {
+                    AddToQueue(video, whereToSave.FileName);
+                    ProcessQueue();
+                }
+                else
+                {
+                    ToggleUI(true);
                 }
             }
-            else {
-                MessageBox.Show("That doesn't look like a valid URL", ActiveForm.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                downloadButton.Enabled = true;
-                urlTextBox.Enabled = true;
+            else if (videos.Count > 1)
+            {
+                using (var cv = new ChooseVideos(videos))
+                {
+                    cv.ShowDialog();
+                    List<Video> checkedVideos = cv.GetCheckedVideos();
+                    if (checkedVideos.Count > 0)
+                    {
+                        FolderBrowserDialog saveToDirectory = new FolderBrowserDialog();
+                        if (saveToDirectory.ShowDialog() == DialogResult.OK)
+                        {
+                            foreach (var vid in checkedVideos)
+                            {
+                                string saveFilePath = Path.Combine(saveToDirectory.SelectedPath, CleanFileName(vid.Title)) + (preferMP4.Checked ? ".mp4" : ".flv");
+                                AddToQueue(vid, saveFilePath);
+                            }
+                            ProcessQueue();
+                            return;
+                        }
+                    }
+                }
+
+                ToggleUI(true);
+            }
+            else
+            {
+                MessageBox.Show("Error obtaning video info from URL", ActiveForm.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+                ToggleUI(true);
             }
         }
-        private List<Video> getVideosFromVideoURI(Uri videoURI) {
+
+        private void AddToQueue(Video video, string filePath)
+        {
+            _downloadQueue.Enqueue(Tuple.Create(video, filePath));
+        }
+
+        private bool ProcessQueue()
+        {
+            if (_downloadQueue.Count > 0)
+            {
+                var item = _downloadQueue.Dequeue();
+
+                videoTitleLabel.Text = item.Item1.Title;
+                videoTitleLabel.Visible = true;
+                DownloadVideo(item.Item1, item.Item2);
+                return true;
+            }
+
+            return false;
+        }
+
+        private void DownloadVideo(Video video, string filePath)
+        {
+            Downloader d;
+
+            if (preferMP4.Checked)
+                d = new MP4Downloader(video, filePath);
+            else
+                d = new FLVDownloader(video, filePath);
+
+            d.ProgressChanged += OnProgressChanged;
+            d.DownloadComplete += OnDownloadComplete;
+            d.StartDownload();
+        }
+
+        private void OnProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            downloadProgressBar.Value = e.ProgressPercentage;
+            TaskbarManager.Instance.SetProgressValue(e.ProgressPercentage, 100);
+        }
+
+        private void OnDownloadComplete(object sender, EventArgs e)
+        {
+            if (!ProcessQueue())
+            {
+                downloadProgressBar.Value = 0;
+                videoTitleLabel.Visible = false;
+                TaskbarManager.Instance.SetProgressState(TaskbarProgressBarState.NoProgress);
+
+                ToggleUI(true);
+            }
+        }
+
+        private List<Video> GetVideosFromUri(Uri videoURI)
+        {
             List<Video> vids = new List<Video>();
 
             HtmlWeb web = new HtmlWeb();
             HtmlAgilityPack.HtmlDocument htmlDoc = web.Load(videoURI.AbsoluteUri);
-
             HtmlNodeCollection mdNodeCol = htmlDoc.DocumentNode.SelectNodes("//div[@data-videoid]");
-
-            Dictionary<string, string> manifests = new Dictionary<string, string>();
 
             if (mdNodeCol != null)
             {
-                if (mdNodeCol.Count > 1)
+                foreach (HtmlNode mdnode in mdNodeCol)
                 {
-                    List<Video> availableVideos = new List<Video>();
-
-                    foreach (HtmlNode mdnode in mdNodeCol)
-                    {
-                        HtmlAttribute desc = mdnode.Attributes["data-videoid"];
-                        
-                        HtmlNodeCollection titleNodes = mdnode.ParentNode.PreviousSibling.PreviousSibling.SelectNodes("h5");
-
-                        // Some vids use h4
-
-                        if (titleNodes == null)
-                        {
-                            titleNodes = mdnode.ParentNode.PreviousSibling.PreviousSibling.SelectNodes("h4");
-                        }
-
-                        string videoId = desc.Value;
-                        string videoTitle = "";
-
-                        foreach (HtmlNode titleNode in titleNodes)
-                        {
-                            string text = titleNode.InnerText.Trim();
-                            if (text != "")
-                            {
-                                videoTitle = text;
-                            }
-                        }
-
-                        availableVideos.Add(new Video(videoTitle, videoId, getF4MManifestURLForVideoId(videoId)));
-                    }
-
-                    List<string> vidTitles = new List<string>();
-
-                    foreach (Video v in availableVideos)
-                    {
-                        vidTitles.Add(v.Title);
-                    }
-
-                    ChooseVideos cv = new ChooseVideos(vidTitles.ToArray());
-                    AutoResetEvent autoEvent = new AutoResetEvent(false);
-
-                    this.Invoke((MethodInvoker)delegate ()
-                    {
-                        cv.Show();
-                        cv.FormClosed += delegate (object cv_close_sender, FormClosedEventArgs cv_close_e)
-                         {
-                             string[] selectedVideos = cv.CheckedItems.Cast<string>().ToArray();
-                             foreach (string s in selectedVideos)
-                             {
-                                 foreach (Video v in availableVideos)
-                                 {
-                                     if (v.Title == s)
-                                     {
-                                         // manifests.Add(k.Key, getF4MManifestURLForVideoId(k.Value));
-                                         vids.Add(v);
-                                     }
-                                 }
-                             }
-                             autoEvent.Set();
-                         };
-                    });
-                    autoEvent.WaitOne();
-                }
-                else {
-                    HtmlNode mdnode = mdNodeCol.First();
                     HtmlAttribute desc = mdnode.Attributes["data-videoid"];
-                    string videoId = desc.Value;
-                    HtmlNode titlenode = htmlDoc.DocumentNode.SelectSingleNode("//h1");
-                    string videoTitle = titlenode.InnerText;
-
-                    vids.Add(new Video(videoTitle, videoId, getF4MManifestURLForVideoId(videoId)));
+                    vids.Add(new Video(desc.Value));
                 }
-            }
-            else {
-                MessageBox.Show("Error obtaining F4M manifest URL", ActiveForm.Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
-                return null;
             }
 
             return vids;
         }
 
-        private static string getF4MManifestURLForVideoId(string videoId) {
-            return string.Format("http://f1.pc.cdn.bitgravity.com/{0}/{0}_1.f4m", videoId);
-        }
-
-        private static F1VideoTypes? getF1UriVideoType(Uri videoURI)
+        private void ToggleUI(bool enable)
         {
-            HtmlWeb web = new HtmlWeb();
-            HtmlAgilityPack.HtmlDocument htmlDoc = web.Load(videoURI.AbsoluteUri);
-
-            HtmlNodeCollection mdNodeCol = htmlDoc.DocumentNode.SelectNodes("//div[@data-videoid]");
-
-            if (mdNodeCol != null)
-            {
-                if (mdNodeCol.Count > 1)
-                {
-                    return F1VideoTypes.H5AndVideo;
-                }
-                else {
-                    return F1VideoTypes.SingleVideo;
-                }
-            }
-
-            return null;
-        }
-
-        private enum F1VideoTypes {
-            SingleVideo,
-            H5AndVideo,
-        }
-
-        private void getVideoUsingAdobeHDS(Video video, string outFile)
-        {
-            F4F f4f = new F4F();
-            f4f.quality = "3600";
-            f4f.outPath = outFile;
-            f4f.DownloadFragments(video.ManifestUrl, this.downloadProgressBar);
+            downloadButton.Enabled = enable;
+            urlTextBox.Enabled = enable;
+            preferMP4.Enabled = enable;
         }
 
         private void creditsAndStuff_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

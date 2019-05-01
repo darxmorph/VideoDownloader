@@ -1,27 +1,48 @@
-﻿using System.Windows.Forms;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Windows.Forms;
 
 namespace Formula1Downloader
 {
     public partial class ChooseVideos : Form
     {
-        public CheckedListBox.CheckedItemCollection CheckedItems { get; set; }
-        public ChooseVideos(string[] itemList)
+        private List<Video> AvailableVideos { get; }
+
+        public ChooseVideos(List<Video> itemList)
         {
             InitializeComponent();
+            AvailableVideos = itemList;
 
             this.Load += delegate
             {
-                foreach (string s in itemList)
+                foreach (Video v in itemList)
                 {
-                    videosCheckedListBox.Items.Add(s);
+                    videosCheckedListBox.Items.Add(v.Title);
                 }
             };
 
             confirmButton.Click += delegate
             {
-                CheckedItems = videosCheckedListBox.CheckedItems;
                 this.Close();
             };
+        }
+
+        public List<Video> GetCheckedVideos()
+        {
+            List<Video> result = new List<Video>();
+
+            foreach (string s in videosCheckedListBox.CheckedItems.Cast<string>())
+            {
+                foreach (Video v in AvailableVideos)
+                {
+                    if (v.Title == s)
+                    {
+                        result.Add(v);
+                    }
+                }
+            }
+
+            return result;
         }
 
         private const int CP_NOCLOSE_BUTTON = 0x200;
@@ -30,7 +51,7 @@ namespace Formula1Downloader
             get
             {
                 CreateParams myCp = base.CreateParams;
-                myCp.ClassStyle = myCp.ClassStyle | CP_NOCLOSE_BUTTON;
+                myCp.ClassStyle |= CP_NOCLOSE_BUTTON;
                 return myCp;
             }
         }

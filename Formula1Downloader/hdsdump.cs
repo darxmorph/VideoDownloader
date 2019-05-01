@@ -1209,7 +1209,7 @@ namespace hdsdump
             }
         }
 
-        public void DownloadFragments(string manifestUrl, System.Windows.Forms.ProgressBar progressBar)
+        public void DownloadFragments(string manifestUrl, Action<int, int> onProgressChanged)
         {
             HTTP cc = new HTTP(!Program.fproxy);
             this.ParseManifest(manifestUrl);
@@ -1278,8 +1278,7 @@ namespace hdsdump
                     remaining = String.Format("<c:DarkCyan>Time remaining: </c>{0:00}<c:Cyan>:</c>{1:00}<c:Cyan>:</c>{2:00}", timeRemaining.Hours, timeRemaining.Minutes, timeRemaining.Seconds);
                 }
                 Program.Message(String.Format("{0,-46} {1}{2}\r", "Downloading <c:White>" + fragNum + "</c>/" + this.fragCount + " fragments", sDuration, remaining));
-                progressBar.Invoke(new Action(() => { progressBar.Minimum = 0; progressBar.Maximum = this.fragCount; progressBar.Value = this.fragNum; }));
-                Microsoft.WindowsAPICodePack.Taskbar.TaskbarManager.Instance.SetProgressValue(this.fragNum, this.fragCount);
+                onProgressChanged(this.fragNum, this.fragCount);
                 int fragIndex = FindFragmentInTabe(this.fragNum);
                 if (fragIndex >= 0)
                     this.discontinuity = this.fragTable[fragIndex].discontinuityIndicator;

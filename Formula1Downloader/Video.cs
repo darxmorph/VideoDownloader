@@ -1,22 +1,29 @@
-﻿using System;
+﻿using Newtonsoft.Json.Linq;
+using System.Net;
 
 namespace Formula1Downloader
 {
     public class Video
     {
-        #region Computed Propoperties
-        public string Title { get; }
-        public string Id { get; }
-        public string ManifestUrl { get; }
-        #endregion
+        private string _title;
 
-        #region Constructors
-        public Video(string title, string id, string manifesturl)
+        public string Title => _title ?? (_title = GetVideoTitle());
+        public string Id { get; }
+
+        public Video(string id)
         {
-            this.Title = title;
-            this.Id = id;
-            this.ManifestUrl = manifesturl;
+            Id = id;
         }
-        #endregion
+
+        private string GetVideoTitle()
+        {
+            using (var webClient = new WebClient())
+            {
+                string infoURL = string.Format("https://player.ooyala.com/player_api/v1/content_tree/embed_code/tudTgyOkO_Oa2kec6fNFnApvZ8ig/{0}?codecPriority=avc", Id);
+
+                JObject infoJSON = JObject.Parse(webClient.DownloadString(infoURL));
+                return infoJSON["content_tree"][Id]["title"].Value<string>();
+            }
+        }
     }
 }
