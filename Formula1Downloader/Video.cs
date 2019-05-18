@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Net;
+using System.Text;
 
 namespace Formula1Downloader
 {
@@ -17,7 +18,7 @@ namespace Formula1Downloader
 
         private string GetVideoTitle()
         {
-            using (var webClient = new WebClient())
+            using (var webClient = new WebClient() { Encoding = Encoding.UTF8 })
             {
                 string infoURL = string.Format("https://player.ooyala.com/player_api/v1/content_tree/embed_code/tudTgyOkO_Oa2kec6fNFnApvZ8ig/{0}?codecPriority=avc", Id);
 
