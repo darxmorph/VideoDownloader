@@ -46,7 +46,7 @@ namespace Formula1Downloader
                 var video = videos.First();
                 var whereToSave = new SaveFileDialog
                 {
-                    Filter = preferMP4.Checked ? "MP4 video (*.mp4)|*.mp4|All files (*.*)|*.*" : "FLV video (*.flv)|*.flv|All files (*.*)|*.*",
+                    Filter = "MP4 video (*.mp4)|*.mp4|All files (*.*)|*.*",
                     FileName = CleanFileName(video.Title)
                 };
 
@@ -73,7 +73,7 @@ namespace Formula1Downloader
                         {
                             foreach (var vid in checkedVideos)
                             {
-                                string saveFilePath = Path.Combine(saveToDirectory.SelectedPath, CleanFileName(vid.Title)) + (preferMP4.Checked ? ".mp4" : ".flv");
+                                string saveFilePath = Path.Combine(saveToDirectory.SelectedPath, CleanFileName(vid.Title)) + ".mp4";
                                 AddToQueue(vid, saveFilePath);
                             }
                             ProcessQueue();
@@ -113,12 +113,7 @@ namespace Formula1Downloader
 
         private void DownloadVideo(Video video, string filePath)
         {
-            Downloader d;
-
-            if (preferMP4.Checked)
-                d = new MP4Downloader(video, filePath);
-            else
-                d = new FLVDownloader(video, filePath);
+            Downloader d = new MP4Downloader(video, filePath);
 
             d.ProgressChanged += OnProgressChanged;
             d.DownloadComplete += OnDownloadComplete;
@@ -149,13 +144,13 @@ namespace Formula1Downloader
 
             HtmlWeb web = new HtmlWeb();
             HtmlAgilityPack.HtmlDocument htmlDoc = web.Load(videoURI.AbsoluteUri);
-            HtmlNodeCollection mdNodeCol = htmlDoc.DocumentNode.SelectNodes("//div[@data-videoid]");
+            HtmlNodeCollection mdNodeCol = htmlDoc.DocumentNode.SelectNodes("//video-js[@id]");
 
             if (mdNodeCol != null)
             {
                 foreach (HtmlNode mdnode in mdNodeCol)
                 {
-                    HtmlAttribute desc = mdnode.Attributes["data-videoid"];
+                    HtmlAttribute desc = mdnode.Attributes["id"];
                     vids.Add(new Video(desc.Value));
                 }
             }
@@ -167,7 +162,6 @@ namespace Formula1Downloader
         {
             downloadButton.Enabled = enable;
             urlTextBox.Enabled = enable;
-            preferMP4.Enabled = enable;
         }
 
         private void creditsAndStuff_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)

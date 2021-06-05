@@ -35,7 +35,6 @@
             this.urlTextBox = new System.Windows.Forms.TextBox();
             this.creditsAndStuff = new System.Windows.Forms.LinkLabel();
             this.videoTitleLabel = new System.Windows.Forms.Label();
-            this.preferMP4 = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // downloadButton
@@ -98,24 +97,11 @@
             this.videoTitleLabel.Text = "videoTitle";
             this.videoTitleLabel.Visible = false;
             // 
-            // preferMP4
-            // 
-            this.preferMP4.AutoSize = true;
-            this.preferMP4.Checked = true;
-            this.preferMP4.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.preferMP4.Location = new System.Drawing.Point(27, 202);
-            this.preferMP4.Name = "preferMP4";
-            this.preferMP4.Size = new System.Drawing.Size(136, 29);
-            this.preferMP4.TabIndex = 13;
-            this.preferMP4.Text = "Prefer MP4";
-            this.preferMP4.UseVisualStyleBackColor = true;
-            // 
             // ChooseURL
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 24F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1111, 336);
-            this.Controls.Add(this.preferMP4);
             this.Controls.Add(this.videoTitleLabel);
             this.Controls.Add(this.creditsAndStuff);
             this.Controls.Add(this.urlTextBox);
@@ -141,7 +127,6 @@
         private System.Windows.Forms.TextBox urlTextBox;
         private System.Windows.Forms.LinkLabel creditsAndStuff;
         private System.Windows.Forms.Label videoTitleLabel;
-        private System.Windows.Forms.CheckBox preferMP4;
     }
 }
 
